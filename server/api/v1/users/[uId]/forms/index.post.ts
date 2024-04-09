@@ -1,8 +1,8 @@
 // To post a form to the server, we need to send a POST request to the server with the form data and user ID as parameters. The server will then create the form and return the form data. The client will then display the form data to the user.
 
+import mongoose from "mongoose";
 import { z } from "zod";
 import { Form } from "~/server/models/form.model";
-import { User } from "~/server/models/user.model";
 import { findUserById } from "~/server/utils/dbUtils";
 import { MyForm } from "~/types";
 
@@ -37,6 +37,16 @@ export default defineEventHandler(async (event) => {
     throw body.error.errors.map((e) => e);
   }
   const validData = body.data;
+
+  if (!mongoose.Types.ObjectId.isValid(validData.uId)) {
+    throw createError({
+      statusCode: 400,
+      message: "Invalid user id",
+    });
+  }
+  
+  // Check if user exists
+  await findUserById(validData.uId);
 
   // Check if user exists
   await findUserById(validData.uId);
