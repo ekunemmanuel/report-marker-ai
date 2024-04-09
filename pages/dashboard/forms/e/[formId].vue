@@ -303,7 +303,6 @@ function back() {
 
 definePageMeta({
   layout: "dashbord-layout",
-  redirect: "/",
 });
 useHead({
   title: "Edit Form",

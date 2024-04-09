@@ -42,7 +42,6 @@ const isLoading = computed(() => loading.value || loginWithGoogleLoading.value);
 definePageMeta({
   middleware: ["guess"],
   auth: false,
-  redirect: "/",
 });
 
 useHead({

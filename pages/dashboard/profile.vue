@@ -10,7 +10,6 @@ import TopBar from '~/components/TopBar.vue';
 
 definePageMeta({
   layout: "dashbord-layout",
-  redirect: "/",
 });
 useHead({
   title: "Profile",

@@ -33,7 +33,6 @@ onErrorCaptured(() => {
 
 definePageMeta({
   layout: "dashbord-layout",
-  redirect: "/",
 });
 
 useHead({

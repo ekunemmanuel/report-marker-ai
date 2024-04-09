@@ -1,8 +1,8 @@
 <template>
   <div
-    class="flex justify-end gap-[10px] p-[10px] max-w-[800px] mx-auto items-center"
+    class="flex justify-between gap-[10px] p-[10px] max-w-[800px] mx-auto items-center"
   >
-    <!-- <NuxtLink to="/"> Report-Lysis </NuxtLink>
+    <NuxtLink to="/"> Report-Lysis </NuxtLink>
     <div class="flex items-center gap-[10px]">
       <div class="space-x-[10px]" v-if="status == 'unauthenticated'">
         <UButton
@@ -55,56 +55,47 @@
         aria-label="Theme"
         @click="toggleColorMode"
       />
-    </div> -->
-
-    <UButton
-        :icon="
-          isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'
-        "
-        variant="ghost"
-        aria-label="Theme"
-        @click="toggleColorMode"
-      />
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-// const { status, data, signOut } = useAuth();
-// const route = useRoute();
+const { status, data, signOut } = useAuth();
+const route = useRoute();
 
-// const items = [
-//   [
-//     // {
-//     //   label: "Dashboard",
-//     //   click: async () => {
-//     //     navigateTo("/dashboard");
-//     //   },
-//     // },
-//     {
-//       label: "Forms",
-//       click: async () => {
-//         navigateTo("/dashboard/forms");
-//       },
-//     },
-//     {
-//       label: "Profile",
-//       click: async () => {
-//         navigateTo("/dashboard/profile");
-//       },
-//     },
-//   ],
+const items = [
+  [
+    // {
+    //   label: "Dashboard",
+    //   click: async () => {
+    //     navigateTo("/dashboard");
+    //   },
+    // },
+    {
+      label: "Forms",
+      click: async () => {
+        navigateTo("/dashboard/forms");
+      },
+    },
+    {
+      label: "Profile",
+      click: async () => {
+        navigateTo("/dashboard/profile");
+      },
+    },
+  ],
 
-//   [
-//     {
-//       label: "Sign Out",
-//       icon: "solar:logout-2-linear",
-//       click: async () => {
-//         await signOut();
-//       },
-//       slot: "signout",
-//     },
-//   ],
-// ];
+  [
+    {
+      label: "Sign Out",
+      icon: "solar:logout-2-linear",
+      click: async () => {
+        await signOut();
+      },
+      slot: "signout",
+    },
+  ],
+];
 
 const colorMode = useColorMode();
 

@@ -55,7 +55,6 @@ const isLoading = computed(() => loading.value || registerLoading.value);
 definePageMeta({
   middleware: "guess",
   auth: false,
-  redirect: "/",
 });
 useHead({
   title: "Register",

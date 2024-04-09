@@ -305,7 +305,6 @@ async function saveForm() {
 
 definePageMeta({
   layout: "dashbord-layout",
-  redirect: "/",
 });
 useHead({
   title: "New Form",
