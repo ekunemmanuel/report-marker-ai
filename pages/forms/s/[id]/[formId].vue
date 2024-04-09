@@ -27,6 +27,7 @@ onErrorCaptured(() => {
 definePageMeta({
   auth: false,
   layout: false,
+  redirect: "/",
 });
 </script>
 

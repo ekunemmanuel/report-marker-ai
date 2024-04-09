@@ -63,6 +63,7 @@ const items = [
 
 definePageMeta({
   layout: "dashbord-layout",
+  redirect: "/",
 });
 useHead({
   title: form.value?.title ?? "Form",

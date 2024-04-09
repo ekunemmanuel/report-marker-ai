@@ -73,7 +73,7 @@ const chartOptions = ref({
 
 definePageMeta({
   layout: "dashbord-layout",
-  redirect: "/dashboard/forms",
+  redirect: "/",
 });
 
 useHead({
