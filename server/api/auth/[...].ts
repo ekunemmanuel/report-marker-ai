@@ -1,6 +1,6 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import type { AuthOptions, Profile } from "next-auth";
+import type { AuthOptions, User as AdapterUser } from "next-auth";
 import { z } from "zod";
 import { compare } from "bcrypt";
 import { NuxtAuthHandler } from "#auth";
@@ -88,7 +88,7 @@ export const authOptions: AuthOptions = {
         let existingUser = await User.findOne({
           email: user.email!,
         });
-        
+
         token = {
           ...existingUser?.toObject(),
           ...token,
@@ -128,12 +128,8 @@ export const authOptions: AuthOptions = {
                 "A user with this email already exists. Please sign in with Google.",
             });
           }
-
-          existingUser.replaceOne({
-            password: "",
-          });
-
-          user = existingUser.toObject();
+          delete (existingUser as { password?: string }).password;
+          user = existingUser as AdapterUser;
 
           console.log({ user });
         } else {
