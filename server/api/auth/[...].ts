@@ -85,15 +85,20 @@ export const authOptions: AuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        let existingUser = await User.findOne({
+          email: user.email!,
+        });
+        
         token = {
-          ...user,
+          ...existingUser?.toObject(),
           ...token,
         };
       }
 
+      console.log({ token }, "token");
+
       return token;
     },
-
 
     async session({ session, token, user }) {
       session.user = {
@@ -101,6 +106,8 @@ export const authOptions: AuthOptions = {
         ...token,
         ...user,
       };
+
+      console.log({ session }, "session");
 
       return session;
     },
@@ -112,20 +119,43 @@ export const authOptions: AuthOptions = {
           await User.findOne({ email: user.email! })
         )?.toObject();
         if (existingUser) {
-          //if user exists and has a password, they registered with credentials
-          if (existingUser.password) {
-            throw new Error(
-              "A user with this email already exists. Please sign in with credentials."
-            );
+          //if user exists and provider is google, they registered with Google
+          if (existingUser.provider === "google" && existingUser.password) {
+            console.log("user exists and provider is google");
+            throw createError({
+              statusCode: 401,
+              statusMessage:
+                "A user with this email already exists. Please sign in with Google.",
+            });
           }
+
+          existingUser.replaceOne({
+            password: "",
+          });
+
+          user = existingUser.toObject();
+
+          console.log({ user });
         } else {
           //if not create user
-          await User.create({
+          const response = await User.create({
             email: user?.email,
             name: user?.name,
             photoURL: user?.image,
             password: "",
+            provider: "google",
           });
+
+          if (!response)
+            throw createError({
+              statusCode: 500,
+              statusMessage: "Internal Server Error",
+            });
+
+          delete (response as { password?: string }).password;
+          user = response.toObject();
+
+          console.log({ user }, "user created");
         }
       }
       return true;

@@ -10,6 +10,7 @@ export interface UserDocument extends Document {
   plan?: PlanDocument;
   subscription?: "active" | "inactive";
   password: string;
+  provider: "credentials" | "google";
 }
 
 const UserSchema = new Schema(
@@ -39,6 +40,11 @@ const UserSchema = new Schema(
     subscription: {
       type: String,
       enum: ["active", "inactive"],
+    },
+    provider: {
+      type: String,
+      enum: ["credentials", "google"],
+      default: "credentials",
     },
   },
   { timestamps: true }
