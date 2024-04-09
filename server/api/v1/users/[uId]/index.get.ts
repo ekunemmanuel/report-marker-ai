@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
   const interval = setInterval(async () => {
     const user = await findUserById(params.data.uId);
     await eventStream.push(JSON.stringify({ ...user }));
-  }, 10000);
+  }, 1000);
 
   // cleanup the interval and close the stream when the connection is terminated
   eventStream.onClosed(async () => {
