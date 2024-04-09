@@ -1,13 +1,28 @@
+<script setup lang="ts">
+const { data } = useAuth();
+const user = useUser();
+user.value = {
+  name: data.value?.user?.name || "",
+  email: data.value?.user?.email || "",
+  uId: data.value?.user?.uId || "",
+};
+definePageMeta({
+  auth: false,
+});
+useHead({
+  title: "Report-Lysis",
+  meta: [
+    {
+      name: "description",
+      content: "Home page",
+    },
+  ],
+});
+</script>
+
 <template>
-  <div>
-    
+  <div class="max-w-[1000px] mx-auto px-[10px]">
   </div>
 </template>
 
-<script lang="ts" setup>
-
-</script>
-
-<style scoped>
-
-</style>
+<style scoped></style>

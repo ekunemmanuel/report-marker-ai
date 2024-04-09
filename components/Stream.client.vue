@@ -8,7 +8,7 @@ import type { User } from "~/types";
 const user = useUser();
 
 const { eventSource } = useEventSource(
-  `http://localhost:3000/api/v1/${user.value?.uId}`,
+  `${location.origin}/api/v1/users/${user.value?.uId}`,
   ["notice", "update"] as const,
   {
     autoReconnect: {
@@ -20,10 +20,13 @@ const { eventSource } = useEventSource(
 );
 
 eventSource.value!.onmessage = function (event) {
-  const data = JSON.parse(event.data) as User;
+  const data = JSON.parse(event.data);
 
-  user.value = data;
-
+  user.value = {
+    uId: data.uId,
+    name: data.name,
+    email: data.email,
+  };
   console.log(data);
 
   // Update UI or perform actions based on the received data
@@ -35,6 +38,7 @@ eventSource.value!.onopen = function (event) {
 
 onBeforeUnmount(() => {
   eventSource.value!.close();
+  console.log("SSE connection closed");
 });
 </script>
 

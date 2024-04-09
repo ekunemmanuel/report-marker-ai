@@ -1,26 +1,43 @@
 <template>
   <div class="max-w-[600px] w-full mx-auto">
+    <div v-if="pending">
+      <div class="text-[50px] flex justify-center">
+        <UIcon name="eos-icons:bubble-loading" />
+      </div>
+    </div>
     <div v-if="form" class="space-y-4">
-      Edit Form
       <div
-        class="sticky z-[10] top-[-10px] pb-[5px] space-y-[30px] dark:bg-[#121212] bg-white"
+        class="sticky z-[10] top-[-10px] pb-[5px] dark:bg-[#121212] bg-white"
       >
-        <div
-          class="flex justify-between gap-[10px] items-end dark:bg-[#121212] bg-white"
-        >
-          <div>
-            <h1 class="text-5xl font-bold">{{ form.title }}</h1>
-            <p class="text-gray-500 text-wrap break-all">{{ form.description }}</p>
-          </div>
+        <div class="pt-[10px]">
           <UButton
             variant="ghost"
             color="gray"
             class="px-[10px]"
-            icon="material-symbols:edit-rounded"
-            @click="editFormHeader"
+            icon="material-symbols:arrow-back-ios-new-rounded"
+            @click="back"
           />
         </div>
-        <UDivider class="" />
+        <div class="space-y-[30px]">
+          <div
+            class="flex justify-between gap-[10px] items-end dark:bg-[#121212] bg-white"
+          >
+            <div class="space-y-3">
+              <h1 class="text-5xl font-bold">{{ form.title }}</h1>
+              <p class="text-gray-500 text-wrap break-all">
+                {{ form.description }}
+              </p>
+            </div>
+            <UButton
+              variant="ghost"
+              color="gray"
+              class="px-[10px]"
+              icon="material-symbols:edit-rounded"
+              @click="editFormHeader"
+            />
+          </div>
+          <UDivider class="" />
+        </div>
       </div>
 
       <div>
@@ -147,12 +164,12 @@
 </template>
 
 <script setup lang="ts">
-import type { Question } from "~/types";
+import type { MyForm, Question } from "~/types";
 import { v4 } from "uuid";
 import { parseQuestionType } from "~/utils/index";
 const { notification } = useNotification();
-const { updateForm } = useApiCalls();
 const { params } = useRoute();
+const { updateForm, getForm } = useApiCalls();
 
 const user = useUser();
 
@@ -161,17 +178,15 @@ const isEditFormHeaderOpen = ref(false);
 const isAddQuestionOpen = ref(false);
 const isEditQuestionOpen = ref(false);
 const isGenerateQuestionsOpen = ref(false);
-const fId = ref(params.fId);
+const fId = ref<string>(params.formId as string);
 const isSaving = ref(false);
 
-const myForms = useForms();
+const { data: form, pending } = await useLazyAsyncData(
+  "form",
 
-const form = computed(() => {
-  return myForms.value.find((form) => form.fId === fId.value);
-});
-
+  async () => await getForm(user.value!.uId, fId.value)
+);
 const formHeader = reactive({
-  fId: fId.value,
   title: form.value?.title || "",
   description: form.value?.description || "",
 });
@@ -198,7 +213,6 @@ function closeModal() {
   question.qId = "";
   formHeader.title = "Form Title";
   formHeader.description = "Form Description";
-  formHeader.fId = "";
 }
 
 function openQuestionModal() {
@@ -260,28 +274,35 @@ function editFormHeader() {
 }
 
 async function safeForm() {
-  if (!form.value) return;
-  if (
-    !formHeader.title ||
-    !formHeader.description ||
-    form.value.questions.length === 0
-  ) {
-    notification("Error", "Form is not complete", "error");
-    return;
-  }
-  isOpen.value = true;
-  isSaving.value = true;
-  if (user.value) {
-    await updateForm(user.value.uId, form.value);
-  }
-  navigateTo(`/dashboard/forms/${formHeader.fId}`);
+  try {
+    if (!user.value) return;
+    if (!form.value) return;
+    if (
+      !formHeader.title ||
+      !formHeader.description ||
+      form.value.questions.length === 0
+    ) {
+      notification("Error", "Form is not complete", "error");
+      return;
+    }
+    isOpen.value = true;
+    isSaving.value = true;
 
-  closeModal();
+    await updateForm(user.value.uId, form.value);
+  } catch (error) {
+    console.error(error);
+    notification("Error", "An error occurred while saving the form", "error");
+  } finally {
+    closeModal();
+  }
+}
+
+function back() {
+  navigateTo(`/dashboard/forms/${fId.value}`);
 }
 
 definePageMeta({
   layout: "dashbord-layout",
-    
 });
 useHead({
   title: "Edit Form",

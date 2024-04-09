@@ -1,16 +1,16 @@
 <template>
-  <div class="grid grid-cols-[250px,1fr] h-screen duration-200">
-    <Sidenav />
+  <div
+    class="grid  h-screen duration-200"
+    :class="[isLargeScreen ? 'grid-cols-[250px,1fr]' : ' grid-cols-1']"
+  >
+    <Sidenav v-if="isLargeScreen" />
     <div class="p-[10px] h-screen overflow-y-auto">
       <slot />
     </div>
   </div>
 </template>
 
-<script lang="ts" setup>
-// const ro = useRouter();
-
-// console.log(ro.getRoutes());
+<script setup>
+const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+console.log();
 </script>
-
-<style scoped></style>

@@ -1,6 +1,5 @@
 <template>
-  {{ user }}
-  <div>
+  <div v-if="forms">
     <UTable
       :loading="pending"
       :loading-state="{
@@ -46,35 +45,28 @@
         </UDropdown>
       </template>
     </UTable>
-
-    <UModal
-      v-model="isOpen"
-      :ui="{
-        width: 'w-full sm:max-w-[600px]',
-        background: 'bg-transparent dark:bg-transparent',
-        rounded: 'rounded-none',
-        shadow: 'shadow-none',
-      }"
-      ><div class="text-[50px] flex justify-center">
-        <UIcon name="eos-icons:bubble-loading" />
-      </div>
-    </UModal>
   </div>
+  <UModal
+    v-model="isOpen"
+    :ui="{
+      width: 'w-full sm:max-w-[600px]',
+      background: 'bg-transparent dark:bg-transparent',
+      rounded: 'rounded-none',
+      shadow: 'shadow-none',
+    }"
+    ><div class="text-[50px] flex justify-center">
+      <UIcon name="eos-icons:bubble-loading" />
+    </div>
+  </UModal>
 </template>
 
 <script lang="ts" setup>
 import type { MyForm } from "~/types";
 import { useShare } from "@vueuse/core";
 import { isClient } from "@vueuse/shared";
-const myForms = useForms();
 const user = useUser();
-const { getForms, deleteForm } = useApiCalls();
+const { deleteForm, getForms } = useApiCalls();
 const { notification } = useNotification();
-const { pending, data } = await useLazyAsyncData("forms", () =>
-  getForms(user.value!.uId)
-);
-
-console.log(user.value);
 
 const isOpen = ref(false);
 
@@ -114,21 +106,31 @@ const actions = (row: MyForm) => [
   ],
 ];
 
-const forms = computed(() => {
-  return myForms.value.map((form) => {
-    return {
-      ...form,
-      description: {
-        value: form.description,
-        class: "w-[650px] break-all text-wrap",
-      },
-      createdAt: parseDate(form.createdAt),
-      updatedAt: form.updatedAt
-        ? parseDate(form.updatedAt)
-        : parseDate(form.createdAt),
-    };
-  });
-});
+const {
+  data: forms,
+  pending,
+  refresh,
+} = await useLazyAsyncData(
+  "form",
+  async () => await getForms(user.value!.uId),
+  {
+    transform: (data) => {
+      return data.map((form) => {
+        return {
+          ...form,
+          description: {
+            value: form.description,
+            class: "w-[650px] break-all text-wrap",
+          },
+          createdAt: parseDate(form.createdAt ?? ""),
+          updatedAt: form.updatedAt
+            ? parseDate(form.updatedAt)
+            : parseDate(form.createdAt ?? ""),
+        };
+      });
+    },
+  }
+);
 
 const columns = [
   {
@@ -154,17 +156,21 @@ const columns = [
 ];
 
 async function removeForm(fId: string) {
-  isOpen.value = true;
-  if (!user.value) return;
-  await deleteForm(user.value.uId, fId);
-  myForms.value = myForms.value.filter((f) => f.fId !== fId);
-  notification("Success", "Form deleted successfully", "success");
-  await getForms(user.value.uId);
-  isOpen.value = false;
+  try {
+    isOpen.value = true;
+    if (!user.value) return;
+    await deleteForm(user.value.uId, fId);
+    await refresh();
+    notification("Success", "Form deleted successfully", "success");
+  } catch (error) {
+    notification("Error", "Form failed to delete", "error");
+  } finally {
+    isOpen.value = false;
+  }
 }
 
-function parseDate(data: any) {
-  const date = new Date(data._seconds * 1000);
+function parseDate(data: string) {
+  const date = new Date(data);
   const formattedDate = `${date.getFullYear()}-${String(
     date.getMonth() + 1
   ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;

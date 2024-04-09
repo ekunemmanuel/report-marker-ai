@@ -1,20 +1,26 @@
 <template>
   <aside class="h-full">
     <UCard class="flex flex-col flex-1" :ui="ui">
-      <!-- <template #header>
-        <Placeholder class="h-8" />
-      </template> -->
+      <template #header>
+        <UButton
+              variant="ghost"
+              color="emerald"
+              class="w-full px-[20px] py-[10px] duration-200"
+              to="/"
+            >
+              <div class="flex justify-center items-center gap-[10px]">
+                <UIcon
+                  class="text-[20px]"
+                  name="material-symbols-light:other-houses-rounded"
+                />
+                <span class="truncate"> Report-Lysis</span>
+              </div></UButton
+            >
+      </template>
+
       <nav>
         <ul class="space-y-4 overflow-y-auto">
-          <UButton
-            @click="goToNewForm"
-            class="w-full block px-[20px] py-[10px]  duration-200"
-          >
-            <div class="flex justify-center items-center gap-[10px]">
-              <UIcon class="text-[20px]" name="material-symbols:add-rounded" />
-              <span class="truncate"> New Form</span>
-            </div>
-          </UButton>
+     
           <li v-for="(link, index) in links" :key="index">
             <UButton
               class="w-full block px-[20px] py-[10px] dark:text-white text-black duration-200"
@@ -28,22 +34,21 @@
       </nav>
       <template #footer>
         <div class="flex justify-between items-center">
-          <UButton @click="logout" label="LogOut" color="red" variant="ghost" />
-          <ClientOnly>
-            <UButton
-              :icon="
-                isDark
-                  ? 'i-heroicons-moon-20-solid'
-                  : 'i-heroicons-sun-20-solid'
-              "
-              variant="ghost"
-              aria-label="Theme"
-              @click="toggleColorMode"
-            />
-            <template #fallback>
-              <div class="w-8 h-8" />
-            </template>
-          </ClientOnly>
+          <UButton
+            @click="signOut"
+            label="Sign Out"
+            color="red"
+            variant="ghost"
+            icon="solar:logout-2-linear"
+          />
+          <UButton
+            :icon="
+              isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'
+            "
+            variant="ghost"
+            aria-label="Theme"
+            @click="toggleColorMode"
+          />
         </div>
       </template>
     </UCard>
@@ -51,19 +56,13 @@
 </template>
 
 <script lang="ts" setup>
-import { v4 } from "uuid";
-const { logout } = useMyFirebase();
+const { signOut } = useAuth();
 
-
-const router = useRouter();
-
-function goToNewForm() {
-  const newFormId = computed(() => v4());
-  router.push({
-    name: "dashboard-forms-n-newFormId",
-    params: { newFormId: newFormId.value },
-  });
-}
+const links = ref([
+  // { name: "Dashboard", to: "dashboard" },
+  { name: "Forms", to: "dashboard-forms" },
+  { name: "Profile", to: "dashboard-profile" },
+]);
 const colorMode = useColorMode();
 
 const isDark = computed({
@@ -74,12 +73,6 @@ const isDark = computed({
     colorMode.preference = colorMode.value === "dark" ? "light" : "dark";
   },
 });
-
-const links = ref([
-  { name: "Dashboard", to: "dashboard" },
-  { name: "Forms", to: "dashboard-forms" },
-  { name: "Profile", to: "dashboard-profile" },
-]);
 
 const toggleColorMode = () => {
   isDark.value = !isDark.value;
@@ -105,9 +98,6 @@ const ui = {
     padding: "!px-[10px] !py-[10px] sm:p-0",
   },
 };
-
-const r = useRoute();
-// console.log(r);
 </script>
 
 <style scoped></style>

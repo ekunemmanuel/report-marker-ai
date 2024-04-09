@@ -1,23 +1,17 @@
 <template>
-  <div v-if="form">
+  <div v-if="!pending && form" class="space-y-3">
     <Head>
       <title>{{ form.title }}</title>
       <meta name="description" content="{{ form.description }}" />
     </Head>
+    <TopBar name="" />
     <UTabs @change="onChange" :items="items" class="w-full">
       <template #form="{ item }">
         <MyForm :form="form" :questions="questions" />
       </template>
 
       <template #response="{ item }">
-        <Suspense>
-          <Responses v-if="user" :uId="user.uId" :refresh="refresh" :fId="fId" />
-          <template #fallback>
-            <div class="flex flex-col gap-4 items-center justify-center w-full">
-              <USkeleton v-for="i in 5" :key="i" class="h-[104px] w-[100%]" />
-            </div>
-          </template>
-        </Suspense>
+        <Responses v-if="user" :uId="user.uId" :refresh="refresh" :fId="fId" />
       </template>
 
       <template #report="{ item }"> {{ item.label }} </template>
@@ -26,21 +20,18 @@
 </template>
 
 <script setup lang="ts">
-const myForms = useForms();
+import TopBar from "~/components/TopBar.vue";
+import type { MyForm } from "~/types";
+
 const user = useUser();
 const refresh = ref(false);
-
 const { params } = useRoute();
 const fId = params.formId as string;
-const form = computed(() => {
-  const data = myForms.value.find((f) => f.fId === fId);
 
-  if (!data) {
-    // redirect to 404
-    navigateTo("/dashboard/forms");
-  }
-  return data;
-});
+const { data: form, pending } = await useFetch<MyForm>(
+  `/api/v1/users/${user.value?.uId}/forms/${fId}`
+);
+
 async function onChange(index: number) {
   if (index === 1) {
     // fetch responses
@@ -72,7 +63,6 @@ const items = [
 
 definePageMeta({
   layout: "dashbord-layout",
-     
 });
 useHead({
   title: form.value?.title ?? "Form",

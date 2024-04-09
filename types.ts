@@ -1,4 +1,4 @@
-export type QuestionType = "multiple" | "single" | "text";
+export type QuestionType = "multiple" | "single" | "text" | "text-number";
 
 export interface Question {
   qId: string;

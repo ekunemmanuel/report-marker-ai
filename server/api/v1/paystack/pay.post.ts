@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
 
 async function initPayment(data: Schema) {
   const rumtimeConfig = useRuntimeConfig();
-  const secret = rumtimeConfig.paymentTestSecretKey;
+  const secret =process.dev? rumtimeConfig.paymentTestSecretKey : rumtimeConfig.paymentLiveSecretKey;
   const url = `${rumtimeConfig.paymentApiUrl}/initialize`;
 
   const plan = data.isDaily ? "PLN_anf47egnltnjscl" : "PLN_tk5wi1ll7mqsdsk";

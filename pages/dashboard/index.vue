@@ -73,6 +73,7 @@ const chartOptions = ref({
 
 definePageMeta({
   layout: "dashbord-layout",
+  redirect: "/dashboard/forms",
 });
 
 useHead({
@@ -84,6 +85,13 @@ useHead({
     },
   ],
 });
+const { data } = useAuth();
+const user = useUser();
+user.value = {
+  name: data.value?.user?.name || "",
+  email: data.value?.user?.email || "",
+  uId: data.value?.user?.uId || "",
+};
 </script>
 
 <style scoped></style>

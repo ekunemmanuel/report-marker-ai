@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from "zod";
 import type { FormSubmitEvent } from "#ui/types";
+const { signIn } = useAuth();
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -9,8 +10,6 @@ const schema = z.object({
 
 const loading = ref(false);
 const loginWithGoogleLoading = ref(false);
-
-const { logInWithGoogle, login } = useMyFirebase();
 
 type Schema = z.output<typeof schema>;
 
@@ -22,17 +21,28 @@ const state = reactive({
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   const data = event.data;
   loading.value = true;
-  await login(data.email, data.password);
+  console.log(data);
+
+  const d = await signIn("credentials", data, {
+    redirect: "false",
+  });
+
+  console.log(d);
   loading.value = false;
 }
 
 async function loginWithGoogle() {
   loginWithGoogleLoading.value = true;
-  await logInWithGoogle();
+  await signIn("google");
   loginWithGoogleLoading.value = false;
 }
 
 const isLoading = computed(() => loading.value || loginWithGoogleLoading.value);
+
+definePageMeta({
+  middleware: ["guess"],
+  auth: false,
+});
 
 useHead({
   title: "Login",
@@ -46,10 +56,26 @@ useHead({
 </script>
 
 <template>
-  <div class="grid min-h-screen place-items-center">
-    <div
-      class="max-w-[600px] w-full rounded-lg px-[30px] py-[30px] bg-slate-900"
+  <div
+    class="grid min-h-[calc(100vh-60px)] p-[10px] place-items-center bg-zinc-100 dark:bg-transparent"
+  >
+    <UCard
+      :ui="{
+        ring: '',
+        base: 'max-w-[600px] w-full',
+        divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+      }"
     >
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h1
+            class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
+          >
+            Login
+          </h1>
+        </div>
+      </template>
+
       <div class="space-y-4">
         <UForm
           :schema="schema"
@@ -76,18 +102,22 @@ useHead({
 
         <UDivider label="OR" />
 
-        <UButton
-          color="black"
-          label="Login with Google"
-          icon="i-simple-icons-google"
-          block
-          @click="loginWithGoogle"
-          :loading="loginWithGoogleLoading"
-          :disabled="isLoading"
-        />
-
-        <div class="pt-[10px] flex w-full items-center gap-[10px]">
-          <div class="flex-1">
+        <div class="flex items-center justify-center">
+          <UButton
+            label="Login with Google"
+            color="gray"
+            size="lg"
+            padded
+            icon="i-simple-icons-google"
+            @click="loginWithGoogle"
+            :loading="loginWithGoogleLoading"
+            :disabled="isLoading"
+          />
+        </div>
+        <div
+          class="pt-[10px] flex w-full items-center justify-center gap-[10px]"
+        >
+          <div class="">
             <UButton
               to="/register"
               label="Don't have an account? Register here"
@@ -95,18 +125,8 @@ useHead({
               :disabled="isLoading"
             />
           </div>
-
-          <div>
-            <UButton
-              color="white"
-              to="/forgot-password"
-              label="Forgot password?"
-              variant="link"
-              :disabled="isLoading"
-            />
-          </div>
         </div>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

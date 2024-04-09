@@ -5,9 +5,9 @@
         class="sticky z-[10] top-[-10px] pb-[5px] dark:bg-[#121212] bg-white"
       >
         <div class="flex justify-between gap-[10px] items-end py-[10px]">
-          <div>
-            <h1 class="text-5xl font-bold">{{ form.title }}</h1>
-            <p class="text-gray-500">{{ form.description }}</p>
+          <div class="space-y-3">
+            <h1 class="text-5xl font-bold">{{ formHeader.title }}</h1>
+            <p class="text-gray-500">{{ formHeader.description }}</p>
           </div>
         </div>
         <UDivider class="" />
@@ -20,13 +20,16 @@
           :schema="schema"
           @submit="onSubmit"
         >
-          <div v-for="(q, index) in form.questions" class="flex gap-[10px] items-baseline">
+          <div
+            v-for="(q, index) in questions"
+            :key="q.qId"
+            class="flex gap-[10px] items-baseline"
+          >
             <div class="text-[18px] font-bold">
               {{ index + 1 }}
             </div>
             <div class="flex-1">
               <UFormGroup
-                :key="index"
                 :label="q.question"
                 :name="q.qId"
                 :required="q.required"
@@ -85,7 +88,7 @@
             </div>
           </div>
 
-          <UButton type="submit"> Submit </UButton>
+          <UButton type="submit">Submit</UButton>
         </UForm>
       </div>
     </div>
@@ -95,9 +98,11 @@
         <div class="flex flex-col gap-[30px] text-center">
           <div class="flex gap-[10px] items-center">
             <UIcon name="heroicons-outline:document-text" class="size-[50px]" />
-            <p>No questions found</p>
+            <p>There was an error fetching the form. Please try again later.</p>
           </div>
-          <UButton to="/" class="text-center" block>Go back</UButton>
+          <div>
+            <UButton to="/" class="text-center">Go back</UButton>
+          </div>
         </div>
       </div>
     </div>
@@ -156,7 +161,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Question, FormResponse } from "~/types";
+import type { Question, MyForm } from "~/types";
 import { z } from "zod";
 import type { FormSubmitEvent } from "#ui/types";
 import { v4 } from "uuid";
@@ -164,32 +169,70 @@ import { v4 } from "uuid";
 const { submitForm } = useApiCalls();
 
 const { params } = useRoute();
-const { getForm } = useApiCalls();
 const fId = ref(params.formId as string);
 const id = ref(params.id as string);
-const form = useForm();
 const { notification } = useNotification();
 const isOpen = ref(false);
+
+const loading = ref(false);
+
+const questions = toRef<Question[]>([]);
+const formHeader = ref({
+  title: "",
+  description: "",
+});
 try {
-  await getForm(id.value, fId.value);
+  const {
+    data: form,
+    pending,
+    refresh,
+    error,
+  } = await useFetch<MyForm>(`/api/v1/users/${id.value}/forms/${fId.value}`);
+
+  await refresh();
+  if (error.value || !form.value) {
+    throw "There was an error fetching the form. Please try again later.";
+  }
+  formHeader.value.title = form.value.title;
+  formHeader.value.description = form.value.description;
+  questions.value = form.value.questions;
 } catch (error: any) {
-  isOpen.value = true;
   notification("Error", error, "error");
   setTimeout(() => {
     navigateTo("/");
   }, 2000);
-  console.log(error);
 }
 
-const loading = ref(false);
+// Initialize the state object with reactive()
+const state = reactive({
+  // Initialize dynamic qId values based on question types
+  ...questions.value.reduce((acc, question) => {
+    if (question.type === "text") {
+      // For text type, initialize as an empty string
+      acc[question.qId] = "";
+    } else if (question.type === "multiple") {
+      // For multiple type, initialize as an empty array
+      acc[question.qId] = [];
+    } else if (question.type === "single") {
+      // For single type, initialize as null or a default value
+      acc[question.qId] = ""; // or set a default value here
+    }
+    return acc;
+  }, {} as Record<string, string | boolean | string[] | null>),
+  // Other state properties...
+});
 
-const questions = toRef(form.value.questions);
+// Define the schema using Zod
 const schema = z.object(
   questions.value.reduce((acc, question) => {
     if (question.type === "multiple") {
       acc[question.qId] = question.required
         ? z.array(z.string()).nonempty("Please select at least one option")
         : z.array(z.string()).optional();
+    } else if (question.type === "single") {
+      acc[question.qId] = question.required
+        ? z.string().min(1, "Please select an option")
+        : z.string().optional();
     } else {
       acc[question.qId] = question.required
         ? z.string().min(1, "Please enter a value")
@@ -198,35 +241,16 @@ const schema = z.object(
     return acc;
   }, {} as Record<string, z.ZodTypeAny>)
 );
-
 type Schema = z.output<typeof schema>;
 
-const isNotEmpty = computed(() => form.value.questions.length > 0);
-
-const state = reactive(
-  questions.value.reduce((acc, question) => {
-    if (question.type === "multiple") {
-      if (Array.isArray(question.answer)) {
-        acc[question.qId] = question.answer;
-      } else if (typeof question.answer === "string") {
-        acc[question.qId] = question.answer;
-      } else {
-        acc[question.qId] = [];
-      }
-    } else {
-      acc[question.qId] = question.answer;
-    }
-
-    return acc;
-  }, {} as Record<string, string | boolean | string[] | undefined>)
-);
+const isNotEmpty = computed(() => questions.value.length > 0);
 
 async function verifySubmition() {
   try {
     const response = {
       fId: fId.value,
-      title: form.value.title,
-      description: form.value.description,
+      title: formHeader.value.title,
+      description: formHeader.value.description,
       questions: questions.value,
       rId: v4(),
     };
@@ -252,15 +276,16 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     };
   });
   questions.value = dataWithQuestion;
+
   isOpen.value = true;
 }
 
 useHead({
-  title: form.value.title || "No Form",
+  title: formHeader.value?.title || "No title",
   meta: [
     {
       name: "description",
-      content: form.value.description || "No description",
+      content: formHeader.value?.description || "No description",
     },
   ],
 });

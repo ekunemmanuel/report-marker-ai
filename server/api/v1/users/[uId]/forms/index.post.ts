@@ -1,4 +1,9 @@
+// To post a form to the server, we need to send a POST request to the server with the form data and user ID as parameters. The server will then create the form and return the form data. The client will then display the form data to the user.
+
 import { z } from "zod";
+import { Form } from "~/server/models/form.model";
+import { User } from "~/server/models/user.model";
+import { findUserById } from "~/server/utils/dbUtils";
 import { MyForm } from "~/types";
 
 const questionSchema = z.object({
@@ -33,22 +38,19 @@ export default defineEventHandler(async (event) => {
   }
   const validData = body.data;
 
-  // Create Form
-  const da = await createForm<MyForm>(
-    validData.uId,
-    validData.form.fId,
-    validData.form
-  );
+  // Check if user exists
+  await findUserById(validData.uId);
 
-  if (da) {
-    return {
-      statusCode: 200,
-      message: "Form created successfully",
-    };
-  } else {
-    throw createError({
-      statusCode: 500,
-      message: "Failed to create form",
-    });
-  }
+  // Create Form
+  const form = (
+    await Form.create({
+      fId: validData.form.fId,
+      title: validData.form.title,
+      description: validData.form.description,
+      questions: validData.form.questions,
+      uId: validData.uId,
+    })
+  ).toObject();
+
+  return form as MyForm;
 });

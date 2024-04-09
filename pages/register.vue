@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from "zod";
 import type { FormSubmitEvent } from "#ui/types";
+const { signIn } = useAuth();
 
 const schema = z.object({
   email: z.string().email("Invalid email"),
@@ -10,7 +11,8 @@ const schema = z.object({
 const loading = ref(false);
 const registerLoading = ref(false);
 
-const { register, signInWithGoogle } = useMyFirebase();
+const { createProfile } = useApiCalls();
+const { notification } = useNotification();
 
 type Schema = z.output<typeof schema>;
 
@@ -20,20 +22,40 @@ const state = reactive({
 });
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  const data = event.data;
-  loading.value = true;
-  await register(data.email, data.password);
-  loading.value = false;
+  try {
+    const data = event.data;
+    loading.value = true;
+    await createProfile(data.email, data.password);
+
+    navigateTo("/login");
+    notification(
+      "Success",
+      "Account created successfully. Please login.",
+      "success"
+    );
+  } catch (error) {
+    console.error(error);
+    notification(
+      "Error",
+      "An error occurred. Please try again later.",
+      "error"
+    );
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function registerWithGoogle() {
   registerLoading.value = true;
-  await signInWithGoogle();
+  await signIn("google");
   registerLoading.value = false;
 }
 
 const isLoading = computed(() => loading.value || registerLoading.value);
-
+definePageMeta({
+  middleware: "guess",
+  auth: false,
+});
 useHead({
   title: "Register",
   meta: [
@@ -46,10 +68,26 @@ useHead({
 </script>
 
 <template>
-  <div class="grid min-h-screen place-items-center">
-    <div
-      class="max-w-[600px] w-full rounded-lg px-[30px] py-[30px] bg-slate-900"
+  <div
+    class="grid min-h-[calc(100vh-60px)] p-[10px] place-items-center bg-zinc-100 dark:bg-transparent"
+  >
+    <UCard
+      :ui="{
+        ring: '',
+        base: 'max-w-[600px] w-full',
+        divide: 'divide-y divide-gray-100 dark:divide-gray-800',
+      }"
     >
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h1
+            class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
+          >
+            Register
+          </h1>
+        </div>
+      </template>
+
       <div class="space-y-4">
         <UForm
           :schema="schema"
@@ -75,16 +113,18 @@ useHead({
         </UForm>
 
         <UDivider label="OR" />
-
-        <UButton
-          color="black"
-          label="Sign up with Google"
-          icon="i-simple-icons-google"
-          block
-          :disabled="isLoading"
-          :loading="registerLoading"
-          @click="registerWithGoogle"
-        />
+        <div class="flex items-center justify-center">
+          <UButton
+            color="gray"
+            label="Sign up with Google"
+            icon="i-simple-icons-google"
+            size="lg"
+            padded
+            :disabled="isLoading"
+            :loading="registerLoading"
+            @click="registerWithGoogle"
+          />
+        </div>
 
         <div class="pt-[10px] flex w-full items-center justify-center">
           <div class="">
@@ -97,6 +137,6 @@ useHead({
           </div>
         </div>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

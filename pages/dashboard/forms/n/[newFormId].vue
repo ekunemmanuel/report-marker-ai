@@ -6,7 +6,7 @@
       <div
         class="flex justify-between gap-[10px] items-end dark:bg-[#121212] bg-white"
       >
-        <div>
+        <div class="space-y-3">
           <h1 class="text-5xl font-bold">{{ formHeader.title }}</h1>
           <p class="text-gray-500 text-wrap break-all">
             {{ formHeader.description }}
@@ -168,7 +168,6 @@ import type { MyForm } from "~/types";
 import type { Question } from "~/types";
 import { v4 } from "uuid";
 const { notification } = useNotification();
-const myForms = useForms();
 const { createForm } = useApiCalls();
 const { params } = useRoute();
 
@@ -193,7 +192,6 @@ const form = ref<MyForm>({
   description: "",
   questions: [],
 });
-
 
 function editFormHeader() {
   isOpen.value = true;
@@ -285,29 +283,28 @@ async function saveForm() {
   }
   isOpen.value = true;
   isSaving.value = true;
-  myForms.value.unshift({
-    ...formHeader,
-    questions: form.value.questions,
-  });
   if (!user.value) return;
 
-  await createForm(user.value.uId, {
-    ...formHeader,
-    questions: form.value.questions,
-  });
-
-  navigateTo(`/dashboard/forms/${formHeader.fId}`);
-
-  formHeader.title = "Form Title";
-  formHeader.description = "Form Description";
-  formHeader.fId = "";
-  form.value.questions = [];
-  closeModal();
+  try {
+    const response = await createForm(user.value.uId, {
+      ...formHeader,
+      questions: form.value.questions,
+    });
+    navigateTo(`/dashboard/forms/${response.fId}`);
+    notification("Success", "Form created successfully", "success");
+  } catch (error: any) {
+    notification("Error", error, "error");
+  } finally {
+    formHeader.title = "Form Title";
+    formHeader.description = "Form Description";
+    formHeader.fId = "";
+    form.value.questions = [];
+    closeModal();
+  }
 }
 
 definePageMeta({
   layout: "dashbord-layout",
-     
 });
 useHead({
   title: "New Form",

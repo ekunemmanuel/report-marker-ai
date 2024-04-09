@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-[600px] mx-auto space-y-[30px]">
+  <div class="max-w-[600px] mx-auto space-y-[10px]">
     <div class="sticky top-[-10px] z-[10] py-[10px] dark:bg-[#121212] bg-white">
       <div class="flex justify-end gap-[10px] items-center">
         <UDropdown :items="actions(form)">
@@ -21,68 +21,49 @@
       </div>
     </div>
     <div class="flex justify-between gap-[10px] items-end">
-      <div>
+      <div class="space-y-3">
         <h1 class="text-5xl font-bold">{{ form.title }}</h1>
         <p class="text-gray-500">{{ form.description }}</p>
       </div>
     </div>
     <UDivider class="" />
-    <UForm :state="state" class="space-y-4">
-      <UFormGroup
-        v-for="(q, index) in form.questions"
-        :key="index"
-        :label="q.question"
-        :name="q.qId"
-        :required="q.required"
-        :ui="{
-          label: {
-            required: 'after:ml-[5px] text-[18px] !font-bold pb-[5px]',
-          },
-        }"
-      >
-        <div
-          v-if="q.type === 'single'"
-          class="flex justify-between items-start gap-[10px]"
+
+    <div>
+      <ul class="space-y-[20px]">
+        <li
+          v-for="(question, index) in form.questions"
+          :key="index"
+          class="p-4 border border-gray-200 dark:border-gray-800 rounded-lg shadow-md dark:shadow-lg bg-white dark:bg-gray-800 flex gap-[10px]"
         >
-          <URadioGroup
-            v-model="state[q.qId]"
-            :options="q.options"
-            class="flex-1 capitalize"
-          />
-        </div>
-
-        <div v-else-if="q.type === 'multiple'">
-          <div class="flex justify-between items-start gap-[10px]">
-            <USelectMenu
-              class="flex-1"
-              :label="q.question"
-              v-model="state[q.qId]"
-              :options="q.options"
-              placeholder="You can select multiple options"
-              multiple
-            />
+          <div class="font-bold">
+            {{ index + 1 }}
           </div>
-          <ul>
-            <li v-for="option in state[q.qId]" :key="option">
-              <span>
-                {{ option }}
+          <div class="flex-1">
+            <p class="font-bold text-[18px]">
+              {{ question.question }}
+              <span class="text-red-500">
+                {{ question.required ? "*" : "" }}
               </span>
-            </li>
-          </ul>
-        </div>
+            </p>
+            <p>
+              <span class="capitalize">
+                {{ parseQuestionType(question.type) }}
+              </span>
+            </p>
+            <ul class="pl-[20px]">
+              <li
+                v-for="(option, index) in question.options"
+                :key="index"
+                class="list-disc after:"
+              >
+                {{ option }}
+              </li>
+            </ul>
+          </div>
+        </li>
+      </ul>
+    </div>
 
-        <div v-else class="flex justify-between items-start gap-[10px]">
-          <UTextarea
-            class="flex-1"
-            v-model="state[q.qId]"
-            autoresize
-            :maxrows="5"
-          />
-        </div>
-      </UFormGroup>
-
-      <UButton> Submit </UButton>
-    </UForm>
     <UModal
       prevent-close
       v-model="isOpen"
@@ -101,12 +82,10 @@
 
 <script lang="ts" setup>
 import type { MyForm, Question } from "~/types";
-import { z } from "zod";
 import { useShare } from "@vueuse/core";
 import { isClient } from "@vueuse/shared";
-const { getForms, deleteForm } = useApiCalls();
+const { deleteForm } = useApiCalls();
 const { notification } = useNotification();
-const myForms = useForms();
 const isOpen = ref(false);
 const user = useUser();
 
@@ -144,41 +123,6 @@ const actions = (row: MyForm) => [
   ],
 ];
 const form = toRef(props.form);
-const questions = toRef(props.questions);
-const schema = z.object(
-  questions.value.reduce((acc, question) => {
-    if (question.type === "multiple") {
-      acc[question.qId] = question.required
-        ? z.array(z.string()).nonempty("Please select at least one option")
-        : z.array(z.string()).optional();
-    } else {
-      acc[question.qId] = question.required
-        ? z.string().min(1, "Please enter a value")
-        : z.string().optional();
-    }
-    return acc;
-  }, {} as Record<string, z.ZodTypeAny>)
-);
-
-type Schema = z.output<typeof schema>;
-
-const state = reactive(
-  questions.value.reduce((acc, question) => {
-    if (question.type === "multiple") {
-      if (Array.isArray(question.answer)) {
-        acc[question.qId] = question.answer;
-      } else if (typeof question.answer === "string") {
-        acc[question.qId] = question.answer;
-      } else {
-        acc[question.qId] = [];
-      }
-    } else {
-      acc[question.qId] = question.answer;
-    }
-
-    return acc;
-  }, {} as Record<string, string | boolean | string[] | undefined>)
-);
 
 async function startShare() {
   if (!user.value) return;
@@ -196,15 +140,20 @@ async function startShare() {
 }
 
 async function removeForm() {
-  isOpen.value = true;
-  if (!user.value) return;
+  try {
+    isOpen.value = true;
+    if (!user.value) return;
 
-  await deleteForm(user.value.uId, form.value.fId);
-  myForms.value = myForms.value.filter((f) => f.fId !== form.value.fId);
+    await deleteForm(user.value.uId, form.value.fId);
 
-  notification("Success", "Form deleted successfully", "success");
-  await getForms(user.value.uId);
-  isOpen.value = false;
+    notification("Success", "Form deleted successfully", "success");
+
+    navigateTo("/dashboard/forms");
+  } catch (error) {
+    notification("Error", "Form failed to delete", "error");
+  } finally {
+    isOpen.value = false;
+  }
 }
 </script>
 

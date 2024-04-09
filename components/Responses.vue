@@ -58,7 +58,7 @@
   <UModal
     v-model="isOpen"
     :ui="{
-      width: 'w-full sm:max-w-[800px]',
+      width: 'w-full sm:max-w-[600px]',
       padding: 'p-4 sm:p-4',
       margin: '!sm:my-0 ',
       background:
@@ -72,7 +72,7 @@
   >
     <div v-if="response" class="w-full mx-auto space-y-[30px] p-[20px]">
       <div class="flex justify-between gap-[10px] items-start">
-        <div>
+        <div class="space-y-4">
           <h1 class="text-5xl font-bold">{{ response.title }}</h1>
           <p class="text-gray-500">{{ response.description }}</p>
         </div>
@@ -151,7 +151,7 @@
 import type { FormResponse } from "~/types";
 import { parseQuestionType } from "~/utils/index";
 
-const { getResponse } = useApiCalls();
+const { getResponse, getResponses } = useApiCalls();
 const props = defineProps<{
   refresh: boolean;
   uId: string;
@@ -167,7 +167,6 @@ const response = ref<FormResponse | null>(null);
 
 const responseCount = computed(() => responses.value.length);
 const isOpen = ref(false);
-const { getResponses } = useApiCalls();
 
 const columns = [
   {
@@ -176,12 +175,8 @@ const columns = [
   },
   {
     key: "createdAt",
-    label: "Created At",
+    label: "Answered On",
     sortable: true,
-  },
-  {
-    key: "updatedAt",
-    label: "Updated At",
   },
   {
     key: "actions",
@@ -193,7 +188,13 @@ async function openModal(id: string) {
   isOpen.value = true;
   const data = await getResponse(uId.value, fId.value, id);
   if (!data) return;
-  response.value = data;
+  response.value = {
+    ...data,
+    createdAt: parseDate(data.createdAt ?? ""),
+    updatedAt: data.updatedAt
+      ? parseDate(data.updatedAt)
+      : parseDate(data.createdAt ?? ""),
+  };
 }
 
 function closeModal() {
@@ -224,10 +225,10 @@ watch(
       responses.value = data.map((response) => {
         return {
           ...response,
-          createdAt: parseDate(response.createdAt),
+          createdAt: parseDate(response.createdAt ?? ""),
           updatedAt: response.updatedAt
             ? parseDate(response.updatedAt)
-            : parseDate(response.createdAt),
+            : parseDate(response.createdAt ?? ""),
         };
       });
 
@@ -237,9 +238,8 @@ watch(
   { immediate: true }
 );
 
-
-function parseDate(data: any) {
-  const date = new Date(data._seconds * 1000);
+function parseDate(data: string) {
+  const date = new Date(data);
   const formattedDate = `${date.getFullYear()}-${String(
     date.getMonth() + 1
   ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;

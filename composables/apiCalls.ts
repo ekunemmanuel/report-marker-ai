@@ -2,12 +2,10 @@ import type { MyForm, FormResponse } from "~/types";
 
 export const useApiCalls = () => {
   const { notification } = useNotification();
-  const myForms = useForms();
-  const form = useForm();
 
   async function createForm(uId: string, data: MyForm) {
     try {
-      await $fetch("/api/v1/forms", {
+      const response = await $fetch("/api/v1/users/:uId/forms", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -17,14 +15,17 @@ export const useApiCalls = () => {
           uId: uId,
         },
       });
+
+      return response;
     } catch (error) {
       console.error(error);
+      throw new Error("Failed to create form");
     }
   }
 
   async function submitForm(uId: string, response: FormResponse) {
     try {
-      await $fetch("/api/v1/responses", {
+      await $fetch(`/api/v1/users/${uId}/forms/${response.fId}/responses`, {
         method: "POST",
         body: {
           form: {
@@ -32,9 +33,8 @@ export const useApiCalls = () => {
             title: response.title,
             description: response.description,
             questions: response.questions,
+            rId: response.rId,
           },
-          rId: response.rId,
-          uId,
         },
         headers: {
           "Content-Type": "application/json",
@@ -51,40 +51,19 @@ export const useApiCalls = () => {
 
   async function getForm(uId: string, fId: string) {
     try {
-      const data = await $fetch(`/api/v1/forms/shared-form`, {
-        method: "POST",
-        body: {
-          uId,
-          fId,
-        },
-      });
-
-      form.value = data;
+      const data = await $fetch(`/api/v1/users/${uId}/forms/${fId}`);
+      return data;
     } catch (error) {
-      // console.error(error);
-      return null;
+      throw error;
     }
   }
 
   async function getForms(uId: string) {
     try {
-      const data = await $fetch(`/api/v1/forms/fId`, {
-        method: "POST",
-        body: {
-          uId,
-        },
-      });
-      // data.sort((a, b) => {
-      //   let dateA = a.createdAt!.toDate();
-      //   let dateB = b.createdAt!.toDate();
-
-      //   return dateB!.getTime() - dateA!.getTime();
-      // });
-
-      myForms.value = data;
+      const data = await $fetch(`/api/v1/users/${uId}/forms`);
+      return data;
     } catch (error) {
-      // console.error(error);
-      return null;
+      throw error;
     }
   }
 
@@ -115,13 +94,7 @@ export const useApiCalls = () => {
 
   async function getResponses(uId: string, fId: string) {
     try {
-      const data = await $fetch(`/api/v1/responses/fetch-responses`, {
-        method: "post",
-        body: {
-          uId,
-          fId,
-        },
-      });
+      const data = await $fetch(`/api/v1/users/${uId}/forms/${fId}/responses`);
 
       return data;
     } catch (error) {
@@ -132,14 +105,9 @@ export const useApiCalls = () => {
 
   async function getResponse(uId: string, fId: string, rId: string) {
     try {
-      const data = await $fetch(`/api/v1/responses/fetch-response`, {
-        method: "post",
-        body: {
-          uId,
-          fId,
-          rId,
-        },
-      });
+      const data = await $fetch(
+        `/api/v1/users/${uId}/forms/${fId}/responses/${rId}`
+      );
 
       return data;
     } catch (error) {
@@ -150,19 +118,19 @@ export const useApiCalls = () => {
 
   async function updateForm(uId: string, data: MyForm) {
     try {
-      const res = await $fetch("/api/v1/forms/edit-form", {
-        method: "POST",
+      const res = await $fetch(`/api/v1/users/${uId}/forms/${data.fId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: {
           form: data,
           uId: uId,
-          fId: data.fId,
         },
       });
 
       notification("Success", "Form updated successfully", "success");
+      navigateTo(`/dashboard/forms/${data.fId}`);
 
       return res;
     } catch (error) {
@@ -172,7 +140,7 @@ export const useApiCalls = () => {
 
   async function deleteForm(uId: string, fId: string) {
     try {
-      await $fetch("/api/v1/forms", {
+      await $fetch(`/api/v1/users/${uId}/forms/${fId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -183,7 +151,7 @@ export const useApiCalls = () => {
         },
       });
     } catch (error) {
-      console.error(error);
+      throw error;
     }
   }
 
@@ -196,6 +164,25 @@ export const useApiCalls = () => {
       return null;
     }
   }
+
+  async function createProfile(email: string, password: string) {
+    try {
+      const response = await $fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: {
+          email,
+          password,
+        },
+      });
+      return response;
+    } catch (error) {
+      throw new Error("Failed to create profile");
+    }
+  }
+
   return {
     createForm,
     submitForm,
@@ -207,5 +194,6 @@ export const useApiCalls = () => {
     updateForm,
     deleteForm,
     getProfile,
+    createProfile,
   };
 };
