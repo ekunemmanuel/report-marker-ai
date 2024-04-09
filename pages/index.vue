@@ -38,14 +38,25 @@ definePageMeta({
   auth: false,
 });
 useHead({
-  title: "Report-Lysis",
+  title: "Report-Lysis AI",
   meta: [
     {
       name: "description",
-      content: "Home page",
+      content:
+        "Experience effortless data analysis with Report-lysis AI. Our platform helps you unlock insights quickly, perfect for beginners and professionals. Craft insightful survey questions, analyze responses, and make data-driven decisions with ease.",
     },
   ],
 });
+useSeoMeta({
+  ogTitle: 'Unlock Insights with Report-lysis AI | Effortless Data Analysis',
+  ogDescription: 'Experience effortless data analysis with Report-lysis AI. Our platform helps you unlock insights quickly, perfect for beginners and professionals. Craft insightful survey questions, analyze responses, and make data-driven decisions with ease.',
+  ogImage: '/report-lysis.jpg', 
+  ogUrl: 'https://report-lysis-ai.vercel.app',
+  twitterTitle: 'Unlock Insights with Report-lysis AI | Effortless Data Analysis',
+  twitterDescription: 'Experience effortless data analysis with Report-lysis AI. Our platform helps you unlock insights quickly, perfect for beginners and professionals. Craft insightful survey questions, analyze responses, and make data-driven decisions with ease.',
+  twitterImage: '/report-lysis.jpg', // Replace '[twitter:image]' with the URL of your Twitter image
+  twitterCard: 'summary'
+})
 </script>
 
 <template>
