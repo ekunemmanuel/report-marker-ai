@@ -28,7 +28,7 @@ export default defineNuxtConfig({
   },
 
   auth: {
-    baseURL:process.dev? process.env.NUXT_BASE_TEST_URL : process.env.NUXT_BASE_LIVE_URL,
+    baseURL:process.dev? process.env.NUXT_BASE_TEST_URL : process.env.NUXT_AUTH_ORIGIN_NEW_FEATURE,
     provider: {
       type: "authjs",
       
